@@ -31,3 +31,15 @@ CREATE TABLE IF NOT EXISTS tasks (
 		FOREIGN KEY (category_id)
 		REFERENCES categories(id)
 );
+
+CREATE TABLE IF NOT EXISTS task_logs (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	task_id INT NOT NULL,
+	action_type VARCHAR(50) NOT NULL,
+   	details VARCHAR(255) NULL,
+	created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT fk_task_logs_task
+		FOREIGN KEY (task_id)
+		REFERENCES tasks(id)
+);
+
