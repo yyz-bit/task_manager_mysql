@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 	description VARCHAR(255) NULL,
 	is_done TINYINT NOT NULL DEFAULT 0,
 	created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	INDEX idx_tasks_is_done_created_at (is_done, created_at),
 	CONSTRAINT fk_tasks_user
 		FOREIGN KEY (user_id)
 		REFERENCES users(id),
