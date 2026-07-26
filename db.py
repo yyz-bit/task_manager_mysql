@@ -1,9 +1,6 @@
-
 from getpass import getpass
 
-
 import pymysql
-
 
 mysql_password = getpass("MySQL password: ")
 
@@ -18,17 +15,24 @@ connection = pymysql.connect(
 )
 
 cursor = connection.cursor()
+task_id = 2
 try:
-    target_status = 0
+    connection.begin()
     cursor.execute(
-        "SELECT id, title, is_done FROM tasks WHERE is_done = %s ORDER BY id ASC ",
-        (target_status,),
+        "UPDATE tasks SET is_done = %s WHERE id = %s",
+        (1, task_id)
     )
-    tasks = cursor.fetchall()
-    for task in tasks:
-        print(task)
+    cursor.execute(
+        "INSERT INTO task_logs (task_id, action_type, details) VALUES (%s, %s, %s)",
+        (task_id, "status_changed", "任务状态改为已完成")
+    )
+    connection.commit()
+    print("Task updated and log created")
+
+except pymysql.MySQLError as error:
+    connection.rollback()
+    print(f"Database error: {error}")
 
 finally:
     cursor.close()
     connection.close()
-
