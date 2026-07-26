@@ -4,4 +4,4 @@
 
 ## 数据初始化
 
-初始化命令：先执行 sql/schema.sql，再执行 sql/seed.sql。
+初始化命令：使用 MySQL 8.4 客户端，先加载 `sql/schema.sql`，再加载 `sql/seed.sql`。
