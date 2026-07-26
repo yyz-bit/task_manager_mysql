@@ -4,4 +4,4 @@
 
 ## 数据初始化
 
-初始化命令： 待补充
+初始化命令：先执行 sql/schema.sql，再执行 sql/seed.sql。
