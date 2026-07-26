@@ -18,14 +18,17 @@ connection = pymysql.connect(
 )
 
 cursor = connection.cursor()
-target_status = 0
-cursor.execute(
-    "SELECT id, title, is_done FROM tasks WHERE is_done = %s ORDER BY id ASC ",
-    (target_status,),
-)
-tasks = cursor.fetchall()
-for task in tasks:
-    print(task)
+try:
+    target_status = 0
+    cursor.execute(
+        "SELECT id, title, is_done FROM tasks WHERE is_done = %s ORDER BY id ASC ",
+        (target_status,),
+    )
+    tasks = cursor.fetchall()
+    for task in tasks:
+        print(task)
 
-cursor.close()
-connection.close()
+finally:
+    cursor.close()
+    connection.close()
+
