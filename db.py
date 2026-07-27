@@ -2,13 +2,14 @@ from getpass import getpass
 
 import pymysql
 
-while True:
-    try:
-        task_id = int(input("Task ID: "))
-        break
-    except ValueError:
-        print("任务 ID 必须是整数")
+def read_task_id():
+    while True:
+        try:
+            return int(input("Task ID: "))
+        except ValueError:
+            print("任务 ID 必须是整数")
 
+task_id = read_task_id()
 mysql_password = getpass("MySQL password: ")
 
 connection = pymysql.connect(
@@ -21,31 +22,36 @@ connection = pymysql.connect(
     cursorclass=pymysql.cursors.DictCursor,
 )
 
-cursor = connection.cursor()
+def complete_task(connection, task_id):
+    cursor = connection.cursor()
 
-try:
-    connection.begin()
-    cursor.execute(
-        "UPDATE tasks SET is_done = %s WHERE id = %s AND is_done = %s",
-        (1, task_id, 0)
-    )
-    updated_rows = cursor.rowcount
+    try:
 
-    if updated_rows == 0:
-        connection.rollback()
-        print("Task does not exist or is already completed")
-    else:
+        connection.begin()
         cursor.execute(
-            "INSERT INTO task_logs (task_id, action_type, details) VALUES (%s, %s, %s)",
-            (task_id, "status_changed", "任务状态改为已完成")
+            "UPDATE tasks SET is_done = %s WHERE id = %s AND is_done = %s",
+            (1, task_id, 0)
         )
-        connection.commit()
-        print("Task updated and log created")
+        updated_rows = cursor.rowcount
 
-except pymysql.MySQLError as error:
-    connection.rollback()
-    print(f"Database error: {error}")
+        if updated_rows == 0:
+            connection.rollback()
+            print("Task does not exist or is already completed")
+        else:
+            cursor.execute(
+                "INSERT INTO task_logs (task_id, action_type, details) VALUES (%s, %s, %s)",
+                (task_id, "status_changed", "任务状态改为已完成")
+            )
+            connection.commit()
+            print("Task updated and log created")
 
+    except pymysql.MySQLError as error:
+        connection.rollback()
+        print(f"Database error: {error}")
+
+    finally:
+        cursor.close()
+try:
+    complete_task(connection, task_id)
 finally:
-    cursor.close()
     connection.close()
