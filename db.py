@@ -2,6 +2,13 @@ from getpass import getpass
 
 import pymysql
 
+while True:
+    try:
+        task_id = int(input("Task ID: "))
+        break
+    except ValueError:
+        print("任务 ID 必须是整数")
+
 mysql_password = getpass("MySQL password: ")
 
 connection = pymysql.connect(
@@ -15,7 +22,7 @@ connection = pymysql.connect(
 )
 
 cursor = connection.cursor()
-task_id = 2
+
 try:
     connection.begin()
     cursor.execute(
