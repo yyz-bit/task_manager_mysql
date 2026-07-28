@@ -9,18 +9,6 @@ def read_task_id():
         except ValueError:
             print("任务 ID 必须是整数")
 
-task_id = read_task_id()
-mysql_password = getpass("MySQL password: ")
-
-connection = pymysql.connect(
-    host="127.0.0.1",
-    port=3306,
-    user="root",
-    password=mysql_password,
-    database="task_manager_mysql",
-    charset="utf8mb4",
-    cursorclass=pymysql.cursors.DictCursor,
-)
 
 def complete_task(connection, task_id):
     cursor = connection.cursor()
@@ -51,7 +39,24 @@ def complete_task(connection, task_id):
 
     finally:
         cursor.close()
-try:
-    complete_task(connection, task_id)
-finally:
-    connection.close()
+
+def main():
+    task_id = read_task_id()
+    mysql_password = getpass("MySQL password: ")
+
+    connection = pymysql.connect(
+        host="127.0.0.1",
+        port=3306,
+        user="root",
+        password=mysql_password,
+        database="task_manager_mysql",
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+    try:
+        complete_task(connection, task_id)
+    finally:
+        connection.close()
+
+if __name__ == "__main__":
+    main()
