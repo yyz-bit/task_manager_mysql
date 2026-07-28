@@ -17,6 +17,13 @@ def list_tasks(connection):
     finally:
         cursor.close()
 
+def display_tasks(tasks):
+    for task in tasks:
+        status = "已完成" if task["is_done"] else "未完成"
+        print(f"{task['id']}. [{status}] {task['title']}")
+
+
+
 
 def complete_task(connection, task_id):
     cursor = connection.cursor()
@@ -63,8 +70,7 @@ def main():
     )
     try:
         tasks = list_tasks(connection)
-        for task in tasks:
-            print(task)
+        display_tasks(tasks)
 
         task_id = read_task_id()
         complete_task(connection, task_id)
