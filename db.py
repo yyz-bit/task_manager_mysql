@@ -9,6 +9,14 @@ def read_task_id():
         except ValueError:
             print("任务 ID 必须是整数")
 
+def list_tasks(connection):
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT id, title, is_done FROM tasks ORDER BY id ASC")
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+
 
 def complete_task(connection, task_id):
     cursor = connection.cursor()
@@ -41,7 +49,7 @@ def complete_task(connection, task_id):
         cursor.close()
 
 def main():
-    task_id = read_task_id()
+
     mysql_password = getpass("MySQL password: ")
 
     connection = pymysql.connect(
@@ -54,6 +62,11 @@ def main():
         cursorclass=pymysql.cursors.DictCursor,
     )
     try:
+        tasks = list_tasks(connection)
+        for task in tasks:
+            print(task)
+
+        task_id = read_task_id()
         complete_task(connection, task_id)
     finally:
         connection.close()
