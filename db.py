@@ -2,12 +2,14 @@ from getpass import getpass
 
 import pymysql
 
+
 def read_task_id():
     while True:
         try:
             return int(input("Task ID: "))
         except ValueError:
             print("任务 ID 必须是整数")
+
 
 def list_tasks(connection):
     cursor = connection.cursor()
@@ -17,12 +19,11 @@ def list_tasks(connection):
     finally:
         cursor.close()
 
+
 def display_tasks(tasks):
     for task in tasks:
         status = "已完成" if task["is_done"] else "未完成"
         print(f"{task['id']}. [{status}] {task['title']}")
-
-
 
 
 def complete_task(connection, task_id):
@@ -55,8 +56,15 @@ def complete_task(connection, task_id):
     finally:
         cursor.close()
 
-def main():
 
+def show_menu():
+    print("1. 查看任务")
+    print("2. 完成任务")
+    print("0. 退出")
+    return input("请选择操作: ")
+
+
+def main():
     mysql_password = getpass("MySQL password: ")
 
     connection = pymysql.connect(
@@ -69,13 +77,27 @@ def main():
         cursorclass=pymysql.cursors.DictCursor,
     )
     try:
-        tasks = list_tasks(connection)
-        display_tasks(tasks)
+        while True:
+            choice = show_menu()
 
-        task_id = read_task_id()
-        complete_task(connection, task_id)
+            if choice == "1":
+                tasks = list_tasks(connection)
+                display_tasks(tasks)
+
+            elif choice == "2":
+                task_id = read_task_id()
+                complete_task(connection, task_id)
+
+            elif choice == "0":
+                print("程序已退出：")
+                break
+
+            else:
+                print("无效选择，请重新输入")
+
     finally:
         connection.close()
+
 
 if __name__ == "__main__":
     main()
