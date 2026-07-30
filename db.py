@@ -10,6 +10,13 @@ def read_integer(prompt):
         except ValueError:
             print("请输入整数")
 
+def list_categories(connection):
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT id, name FROM categories ORDER BY id ASC")
+        return cursor.fetchall()
+    finally:
+        cursor.close()
 
 def list_tasks(connection):
     cursor = connection.cursor()
@@ -19,11 +26,28 @@ def list_tasks(connection):
     finally:
         cursor.close()
 
+def list_users(connection):
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT id, username FROM users ORDER BY id ASC")
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+
+def display_users(users):
+    print("可选用户：")
+    for user in users:
+        print(f"{user['id']}. {user['username']}")
 
 def display_tasks(tasks):
     for task in tasks:
         status = "已完成" if task["is_done"] else "未完成"
         print(f"{task['id']}. [{status}] {task['title']}")
+
+def display_categories(categories):
+    print("可选分类：")
+    for category in categories:
+        print(f"{category['id']}. {category['name']}")
 
 
 def create_task(connection, user_id, category_id, title, description):
@@ -117,8 +141,14 @@ def main():
                 complete_task(connection, task_id)
 
             elif choice == "3":
+                users = list_users(connection)
+                display_users(users)
                 user_id = read_integer("User ID: ")
+
+                categories = list_categories(connection)
+                display_categories(categories)
                 category_id = read_integer("Category ID: ")
+
                 title = input("Title: ").strip()
 
                 if title:
