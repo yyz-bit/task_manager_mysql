@@ -21,7 +21,10 @@ def list_categories(connection):
 def list_tasks(connection):
     cursor = connection.cursor()
     try:
-        cursor.execute("SELECT id, title, is_done FROM tasks ORDER BY id ASC")
+        cursor.execute("SELECT tasks.id, tasks.title, tasks.is_done, users.username, categories.name AS category_name FROM tasks "
+                       "INNER JOIN users ON tasks.user_id = users.id "
+                       "INNER JOIN categories ON  tasks.category_id = categories.id "
+                       "ORDER BY tasks.id ASC")
         return cursor.fetchall()
     finally:
         cursor.close()
@@ -42,7 +45,8 @@ def display_users(users):
 def display_tasks(tasks):
     for task in tasks:
         status = "已完成" if task["is_done"] else "未完成"
-        print(f"{task['id']}. [{status}] {task['title']}")
+        print(f"{task['id']}. [{status}] {task['title']} | "
+              f"用户：{task['username']} | 分类：{task['category_name']}")
 
 def display_categories(categories):
     print("可选分类：")
