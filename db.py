@@ -29,6 +29,22 @@ def list_tasks(connection):
     finally:
         cursor.close()
 
+def list_tasks_by_status(connection, status):
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            "SELECT tasks.id, tasks.title, tasks.is_done, users.username, categories.name AS category_name FROM tasks "
+            "INNER JOIN users ON tasks.user_id = users.id "
+            "INNER JOIN categories ON  tasks.category_id = categories.id "
+            "WHERE tasks.is_done = %s "
+            "ORDER BY tasks.id ASC",
+             (status,),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+
+
 def list_users(connection):
     cursor = connection.cursor()
     try:
@@ -116,6 +132,7 @@ def show_menu():
     print("1. 查看任务")
     print("2. 完成任务")
     print("3. 创建任务")
+    print("4. 按状态查看任务")
     print("0. 退出")
     return input("请选择操作: ")
 
@@ -160,6 +177,15 @@ def main():
                     create_task(connection, user_id, category_id, title, description)
                 else:
                     print("任务标题不能为空")
+
+            elif choice == "4":
+                status = read_integer("任务状态（0-未完成，1-已完成）： ")
+                if status in (0, 1):
+                    tasks = list_tasks_by_status(connection,status)
+                    display_tasks(tasks)
+                else:
+                    print("状态只能是0 或 1")
+
 
             elif choice == "0":
                 print("程序已退出：")
