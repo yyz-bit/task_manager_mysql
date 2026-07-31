@@ -44,6 +44,21 @@ def list_tasks_by_status(connection, status):
     finally:
         cursor.close()
 
+def search_tasks(connection, keyword):
+    cursor = connection.cursor()
+    pattern = f"%{keyword}%"
+    try:
+        cursor.execute(
+            "SELECT tasks.id, tasks.title, tasks.is_done, users.username, categories.name AS category_name FROM tasks "
+            "INNER JOIN users ON tasks.user_id = users.id "
+            "INNER JOIN categories ON  tasks.category_id = categories.id "
+            "WHERE tasks.title LIKE %s "
+            "ORDER BY tasks.id ASC",
+            (pattern,),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
 
 def list_users(connection):
     cursor = connection.cursor()
@@ -133,6 +148,7 @@ def show_menu():
     print("2. 完成任务")
     print("3. 创建任务")
     print("4. 按状态查看任务")
+    print("5. 按标题搜索任务")
     print("0. 退出")
     return input("请选择操作: ")
 
@@ -185,6 +201,18 @@ def main():
                     display_tasks(tasks)
                 else:
                     print("状态只能是0 或 1")
+
+            elif choice == "5":
+                keyword = input("请输入关键字：").strip()
+                if keyword:
+                    tasks = search_tasks(connection, keyword)
+                    if tasks:
+                        display_tasks(tasks)
+                    else:
+                        print("未找到匹配任务")
+                else:
+                    print("关键词不能为空！")
+
 
 
             elif choice == "0":
