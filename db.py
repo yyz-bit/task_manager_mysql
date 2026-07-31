@@ -44,6 +44,20 @@ def list_tasks_by_status(connection, status):
     finally:
         cursor.close()
 
+def list_task_logs(connection, task_id):
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            "SELECT id, action_type, details, created_at "
+            "FROM task_logs "
+            "WHERE task_id = %s "
+            "ORDER BY id ASC ",
+            (task_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+
 def search_tasks(connection, keyword):
     cursor = connection.cursor()
     pattern = f"%{keyword}%"
@@ -78,6 +92,10 @@ def display_tasks(tasks):
         status = "已完成" if task["is_done"] else "未完成"
         print(f"{task['id']}. [{status}] {task['title']} | "
               f"用户：{task['username']} | 分类：{task['category_name']}")
+
+def display_task_logs(logs):
+    for log in logs:
+        print(f"{log['id']}. [{log['action_type']}] {log['details']} | 时间：{log['created_at']}")
 
 def display_categories(categories):
     print("可选分类：")
@@ -149,6 +167,7 @@ def show_menu():
     print("3. 创建任务")
     print("4. 按状态查看任务")
     print("5. 按标题搜索任务")
+    print("6. 查看任务日志")
     print("0. 退出")
     return input("请选择操作: ")
 
@@ -213,7 +232,14 @@ def main():
                 else:
                     print("关键词不能为空！")
 
+            elif choice == "6":
+                task_id = read_integer("Task ID: ")
+                logs = list_task_logs(connection, task_id)
 
+                if logs:
+                    display_task_logs(logs)
+                else:
+                    print("未找到该任务的日志")
 
             elif choice == "0":
                 print("程序已退出：")
