@@ -1,7 +1,5 @@
-from getpass import getpass
-
 import pymysql
-
+from database import create_connection
 
 # 输入处理
 def read_integer(prompt):
@@ -251,18 +249,7 @@ def show_menu():
 
 
 def main():
-    mysql_password = getpass("MySQL password: ")
-
-    # 一个连接贯穿本次菜单会话，退出时由 finally 统一关闭。
-    connection = pymysql.connect(
-        host="127.0.0.1",
-        port=3306,
-        user="root",
-        password=mysql_password,
-        database="task_manager_mysql",
-        charset="utf8mb4",
-        cursorclass=pymysql.cursors.DictCursor,
-    )
+    connection = create_connection()
     try:
         while True:
             choice = show_menu()
