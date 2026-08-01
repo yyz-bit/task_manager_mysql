@@ -3,6 +3,7 @@ from getpass import getpass
 import pymysql
 
 
+# 输入处理
 def read_integer(prompt):
     while True:
         try:
@@ -10,6 +11,8 @@ def read_integer(prompt):
         except ValueError:
             print("请输入整数")
 
+
+# 只读查询：每个函数独立管理游标，数据库连接由 main() 统一管理。
 def list_categories(connection):
     cursor = connection.cursor()
     try:
@@ -21,6 +24,7 @@ def list_categories(connection):
 def list_tasks(connection):
     cursor = connection.cursor()
     try:
+        # JOIN 后一次取得任务、用户和分类信息。
         cursor.execute("SELECT tasks.id, tasks.title, tasks.is_done, users.username, categories.name AS category_name FROM tasks "
                        "INNER JOIN users ON tasks.user_id = users.id "
                        "INNER JOIN categories ON  tasks.category_id = categories.id "
@@ -32,6 +36,7 @@ def list_tasks(connection):
 def list_tasks_by_status(connection, status):
     cursor = connection.cursor()
     try:
+        # SQL 和参数分开传入，避免手工拼接用户输入。
         cursor.execute(
             "SELECT tasks.id, tasks.title, tasks.is_done, users.username, categories.name AS category_name FROM tasks "
             "INNER JOIN users ON tasks.user_id = users.id "
@@ -60,6 +65,7 @@ def list_task_logs(connection, task_id):
 
 def search_tasks(connection, keyword):
     cursor = connection.cursor()
+    # 两侧的 % 表示关键词可以出现在标题任意位置。
     pattern = f"%{keyword}%"
     try:
         cursor.execute(
@@ -82,6 +88,8 @@ def list_users(connection):
     finally:
         cursor.close()
 
+
+# 结果展示：这些函数只格式化已查到的数据，不访问数据库。
 def display_users(users):
     print("可选用户：")
     for user in users:
@@ -103,6 +111,7 @@ def display_categories(categories):
         print(f"{category['id']}. {category['name']}")
 
 
+# 写操作：业务数据与对应日志放在同一事务中，避免只成功一半。
 def create_task(connection, user_id, category_id, title, description):
     cursor = connection.cursor()
     try:
@@ -112,6 +121,7 @@ def create_task(connection, user_id, category_id, title, description):
             "VALUES (%s, %s, %s, %s)",
             (user_id, category_id, title, description),
         )
+        # 保存新任务的自增 ID，供日志表建立关联。
         new_task_id = cursor.lastrowid
 
         cursor.execute(
@@ -132,6 +142,7 @@ def update_task(connection, task_id, title, description):
     cursor = connection.cursor()
     try:
         connection.begin()
+        # 先确认任务存在，才能区分“不存在”和“内容没有变化”。
         cursor.execute(
             "SELECT id FROM tasks WHERE id = %s",
             (task_id,),
@@ -171,6 +182,7 @@ def complete_task(connection, task_id):
     try:
 
         connection.begin()
+        # 只允许未完成任务从 0 变为 1，避免重复写入完成日志。
         cursor.execute(
             "UPDATE tasks SET is_done = %s WHERE id = %s AND is_done = %s",
             (1, task_id, 0)
@@ -196,6 +208,7 @@ def complete_task(connection, task_id):
         cursor.close()
 
 
+# 菜单与程序入口
 def show_menu():
     print("1. 查看任务")
     print("2. 完成任务")
@@ -211,6 +224,7 @@ def show_menu():
 def main():
     mysql_password = getpass("MySQL password: ")
 
+    # 一个连接贯穿本次菜单会话，退出时由 finally 统一关闭。
     connection = pymysql.connect(
         host="127.0.0.1",
         port=3306,
@@ -303,5 +317,6 @@ def main():
         connection.close()
 
 
+# 被其他模块导入时不自动启动交互程序。
 if __name__ == "__main__":
     main()
