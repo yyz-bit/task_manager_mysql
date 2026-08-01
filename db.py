@@ -28,6 +28,7 @@ def list_tasks(connection):
         cursor.execute("SELECT tasks.id, tasks.title, tasks.is_done, users.username, categories.name AS category_name FROM tasks "
                        "INNER JOIN users ON tasks.user_id = users.id "
                        "INNER JOIN categories ON  tasks.category_id = categories.id "
+                       "WHERE tasks.is_deleted = 0 "
                        "ORDER BY tasks.id ASC")
         return cursor.fetchall()
     finally:
@@ -41,7 +42,7 @@ def list_tasks_by_status(connection, status):
             "SELECT tasks.id, tasks.title, tasks.is_done, users.username, categories.name AS category_name FROM tasks "
             "INNER JOIN users ON tasks.user_id = users.id "
             "INNER JOIN categories ON  tasks.category_id = categories.id "
-            "WHERE tasks.is_done = %s "
+            "WHERE tasks.is_done = %s AND tasks.is_deleted = 0 "
             "ORDER BY tasks.id ASC",
              (status,),
         )
@@ -72,7 +73,7 @@ def search_tasks(connection, keyword):
             "SELECT tasks.id, tasks.title, tasks.is_done, users.username, categories.name AS category_name FROM tasks "
             "INNER JOIN users ON tasks.user_id = users.id "
             "INNER JOIN categories ON  tasks.category_id = categories.id "
-            "WHERE tasks.title LIKE %s "
+            "WHERE tasks.title LIKE %s AND tasks.is_deleted = 0 "
             "ORDER BY tasks.id ASC",
             (pattern,),
         )
@@ -144,7 +145,7 @@ def update_task(connection, task_id, title, description):
         connection.begin()
         # 先确认任务存在，才能区分“不存在”和“内容没有变化”。
         cursor.execute(
-            "SELECT id FROM tasks WHERE id = %s",
+            "SELECT id FROM tasks WHERE id = %s AND is_deleted = 0",
             (task_id,),
         )
         task = cursor.fetchone()
@@ -153,7 +154,7 @@ def update_task(connection, task_id, title, description):
             print("任务不存在")
             return
         cursor.execute(
-            "UPDATE tasks SET title = %s, description = %s WHERE id = %s",
+            "UPDATE tasks SET title = %s, description = %s WHERE id = %s AND is_deleted = 0",
             (title, description, task_id),
         )
         update_rows = cursor.rowcount
@@ -175,6 +176,32 @@ def update_task(connection, task_id, title, description):
     finally:
         cursor.close()
 
+def delete_task(connection, task_id):
+    cursor = connection.cursor()
+    try:
+        connection.begin()
+        cursor.execute(
+            "UPDATE tasks SET is_deleted = 1 "
+            "WHERE id = %s AND is_deleted = 0",
+            (task_id,),
+        )
+        deleted_rows = cursor.rowcount
+        if deleted_rows == 0:
+            connection.rollback()
+            print("任务不存在或已删除")
+        else:
+            cursor.execute(
+                "INSERT INTO task_logs (task_id, action_type, details) VALUES (%s, %s, %s)",
+                (task_id, "deleted", "删除任务"),
+            )
+            connection.commit()
+            print("任务删除成功")
+    except pymysql.MySQLError as error:
+        connection.rollback()
+        print(f"任务删除失败：{error}")
+    finally:
+        cursor.close()
+
 
 def complete_task(connection, task_id):
     cursor = connection.cursor()
@@ -184,14 +211,15 @@ def complete_task(connection, task_id):
         connection.begin()
         # 只允许未完成任务从 0 变为 1，避免重复写入完成日志。
         cursor.execute(
-            "UPDATE tasks SET is_done = %s WHERE id = %s AND is_done = %s",
+            "UPDATE tasks SET is_done = %s "
+            "WHERE id = %s AND is_done = %s AND is_deleted = 0",
             (1, task_id, 0)
         )
         updated_rows = cursor.rowcount
 
         if updated_rows == 0:
             connection.rollback()
-            print("Task does not exist or is already completed")
+            print("任务不存在、已完成或已删除")
         else:
             cursor.execute(
                 "INSERT INTO task_logs (task_id, action_type, details) VALUES (%s, %s, %s) ",
@@ -217,6 +245,7 @@ def show_menu():
     print("5. 按标题搜索任务")
     print("6. 查看任务日志")
     print("7. 修改任务")
+    print("8. 删除任务")
     print("0. 退出")
     return input("请选择操作: ")
 
@@ -303,7 +332,16 @@ def main():
                 else:
                     print("任务新标题不能为空")
 
+            elif choice == "8":
+                tasks = list_tasks(connection)
+                display_tasks(tasks)
 
+                task_id = read_integer("Task ID: ")
+                confirm = input("确定要删除该任务吗？(y/n): ").strip().lower()
+                if confirm == "y":
+                    delete_task(connection, task_id)
+                else:
+                    print("已取消删除")
 
 
             elif choice == "0":
