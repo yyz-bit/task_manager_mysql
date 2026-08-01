@@ -128,6 +128,41 @@ def create_task(connection, user_id, category_id, title, description):
     finally:
         cursor.close()
 
+def update_task(connection, task_id, title, description):
+    cursor = connection.cursor()
+    try:
+        connection.begin()
+        cursor.execute(
+            "SELECT id FROM tasks WHERE id = %s",
+            (task_id,),
+        )
+        task = cursor.fetchone()
+        if task is None:
+            connection.rollback()
+            print("任务不存在")
+            return
+        cursor.execute(
+            "UPDATE tasks SET title = %s, description = %s WHERE id = %s",
+            (title, description, task_id),
+        )
+        update_rows = cursor.rowcount
+        if update_rows == 0:
+            connection.rollback()
+            print("任务内容没有变化")
+            return
+        cursor.execute(
+            "INSERT INTO task_logs (task_id, action_type, details) "
+            "VALUES (%s, %s, %s)",
+            (task_id, "updated", "修改任务信息"),
+        )
+        connection.commit()
+        print("任务更新成功")
+    except pymysql.MySQLError as error:
+        connection.rollback()
+        print(f"任务更新失败：{error}")
+
+    finally:
+        cursor.close()
 
 
 def complete_task(connection, task_id):
@@ -168,6 +203,7 @@ def show_menu():
     print("4. 按状态查看任务")
     print("5. 按标题搜索任务")
     print("6. 查看任务日志")
+    print("7. 修改任务")
     print("0. 退出")
     return input("请选择操作: ")
 
@@ -240,6 +276,21 @@ def main():
                     display_task_logs(logs)
                 else:
                     print("未找到该任务的日志")
+
+            elif choice == "7":
+                tasks = list_tasks(connection)
+                display_tasks(tasks)
+
+                task_id = read_integer("Task ID: ")
+                title = input("New Title: ").strip()
+                if title:
+                    description = input("任务描述（可留空）: ").strip() or None
+                    update_task(connection, task_id, title, description)
+                else:
+                    print("任务新标题不能为空")
+
+
+
 
             elif choice == "0":
                 print("程序已退出：")
