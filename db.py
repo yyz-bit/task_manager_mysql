@@ -1,6 +1,7 @@
 import pymysql
 from database import create_connection
 
+
 # 输入处理
 def read_integer(prompt):
     while True:
@@ -19,18 +20,21 @@ def list_categories(connection):
     finally:
         cursor.close()
 
+
 def list_tasks(connection):
     cursor = connection.cursor()
     try:
         # JOIN 后一次取得任务、用户和分类信息。
-        cursor.execute("SELECT tasks.id, tasks.title, tasks.is_done, users.username, categories.name AS category_name FROM tasks "
-                       "INNER JOIN users ON tasks.user_id = users.id "
-                       "INNER JOIN categories ON  tasks.category_id = categories.id "
-                       "WHERE tasks.is_deleted = 0 "
-                       "ORDER BY tasks.id ASC")
+        cursor.execute(
+            "SELECT tasks.id, tasks.title, tasks.is_done, users.username, categories.name AS category_name FROM tasks "
+            "INNER JOIN users ON tasks.user_id = users.id "
+            "INNER JOIN categories ON  tasks.category_id = categories.id "
+            "WHERE tasks.is_deleted = 0 "
+            "ORDER BY tasks.id ASC")
         return cursor.fetchall()
     finally:
         cursor.close()
+
 
 def list_tasks_by_status(connection, status):
     cursor = connection.cursor()
@@ -42,11 +46,12 @@ def list_tasks_by_status(connection, status):
             "INNER JOIN categories ON  tasks.category_id = categories.id "
             "WHERE tasks.is_done = %s AND tasks.is_deleted = 0 "
             "ORDER BY tasks.id ASC",
-             (status,),
+            (status,),
         )
         return cursor.fetchall()
     finally:
         cursor.close()
+
 
 def list_task_logs(connection, task_id):
     cursor = connection.cursor()
@@ -61,6 +66,7 @@ def list_task_logs(connection, task_id):
         return cursor.fetchall()
     finally:
         cursor.close()
+
 
 def search_tasks(connection, keyword):
     cursor = connection.cursor()
@@ -79,6 +85,7 @@ def search_tasks(connection, keyword):
     finally:
         cursor.close()
 
+
 def list_users(connection):
     cursor = connection.cursor()
     try:
@@ -94,15 +101,18 @@ def display_users(users):
     for user in users:
         print(f"{user['id']}. {user['username']}")
 
+
 def display_tasks(tasks):
     for task in tasks:
         status = "已完成" if task["is_done"] else "未完成"
         print(f"{task['id']}. [{status}] {task['title']} | "
               f"用户：{task['username']} | 分类：{task['category_name']}")
 
+
 def display_task_logs(logs):
     for log in logs:
         print(f"{log['id']}. [{log['action_type']}] {log['details']} | 时间：{log['created_at']}")
+
 
 def display_categories(categories):
     print("可选分类：")
@@ -136,6 +146,7 @@ def create_task(connection, user_id, category_id, title, description):
 
     finally:
         cursor.close()
+
 
 def update_task(connection, task_id, title, description):
     cursor = connection.cursor()
@@ -173,6 +184,7 @@ def update_task(connection, task_id, title, description):
 
     finally:
         cursor.close()
+
 
 def delete_task(connection, task_id):
     cursor = connection.cursor()
@@ -282,7 +294,7 @@ def main():
             elif choice == "4":
                 status = read_integer("任务状态（0-未完成，1-已完成）： ")
                 if status in (0, 1):
-                    tasks = list_tasks_by_status(connection,status)
+                    tasks = list_tasks_by_status(connection, status)
                     display_tasks(tasks)
                 else:
                     print("状态只能是0 或 1")
