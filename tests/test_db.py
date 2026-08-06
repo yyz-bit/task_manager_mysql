@@ -1,4 +1,4 @@
-from db import display_tasks
+from db import display_tasks, read_integer
 from db import display_task_logs
 
 
@@ -62,3 +62,13 @@ def test_display_task_logs(capsys):
         "12. [created] 创建任务 | 时间：2026-08-03 20:02:46\n"
         "13. [updated] 修改任务信息 | 时间：2026-08-03 20:04:58\n"
     )
+
+
+def test_read_integer_returns_integer_for_valid_input(monkeypatch):
+    def fake_input(prompt):
+        return "25"
+
+    monkeypatch.setattr("builtins.input", fake_input)
+
+    result = read_integer("TASK_ID: ")
+    assert result == 25
