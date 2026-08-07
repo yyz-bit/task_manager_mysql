@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from database import create_connection
-from db import get_task, list_tasks, create_task, complete_task
+from db import get_task, list_tasks, create_task, complete_task, delete_task
 
 
 class TaskCreate(BaseModel):
@@ -81,6 +81,26 @@ def complete_task_endpoint(task_id: int):
         raise HTTPException(
             status_code=500,
             detail="完成任务失败"
+        ) from error
+    finally:
+        connection.close()
+
+
+@app.delete("/tasks/{task_id}")
+def delete_task_endpoint(task_id: int):
+    connection = create_connection()
+    try:
+        deleted = delete_task(connection, task_id)
+        if not deleted:
+            raise HTTPException(
+                status_code=400,
+                detail="任务不存在或已删除"
+            )
+        return {"message": "任务删除成功"}
+    except pymysql.MySQLError as error:
+        raise HTTPException(
+            status_code=500,
+            detail="删除任务失败"
         ) from error
     finally:
         connection.close()

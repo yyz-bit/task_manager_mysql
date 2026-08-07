@@ -215,17 +215,17 @@ def delete_task(connection, task_id):
         deleted_rows = cursor.rowcount
         if deleted_rows == 0:
             connection.rollback()
-            print("任务不存在或已删除")
+            return False
         else:
             cursor.execute(
                 "INSERT INTO task_logs (task_id, action_type, details) VALUES (%s, %s, %s)",
                 (task_id, "deleted", "删除任务"),
             )
             connection.commit()
-            print("任务删除成功")
-    except pymysql.MySQLError as error:
+            return True
+    except pymysql.MySQLError:
         connection.rollback()
-        print(f"任务删除失败：{error}")
+        raise
     finally:
         cursor.close()
 
@@ -373,8 +373,16 @@ def main():
 
                 task_id = read_integer("Task ID: ")
                 confirm = input("确定要删除该任务吗？(y/n): ").strip().lower()
+
                 if confirm == "y":
-                    delete_task(connection, task_id)
+                    try:
+                        deleted = delete_task(connection, task_id)
+                        if deleted:
+                            print("任务删除成功")
+                        else:
+                            print("任务不存在或已删除")
+                    except pymysql.MySQLError as error:
+                        print(f"任务删除失败：{error}")
                 else:
                     print("已取消删除")
 
