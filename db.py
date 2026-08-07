@@ -156,11 +156,11 @@ def create_task(connection, user_id, category_id, title, description):
             (new_task_id, "created", "创建任务"),
         )
         connection.commit()
-        print("任务创建成功")
-    except pymysql.MySQLError as error:
-        connection.rollback()
-        print(f"任务创建失败：{error}")
+        return new_task_id
 
+    except pymysql.MySQLError:
+        connection.rollback()
+        raise
     finally:
         cursor.close()
 
@@ -304,7 +304,17 @@ def main():
 
                 if title:
                     description = input("任务描述（可留空）: ").strip() or None
-                    create_task(connection, user_id, category_id, title, description)
+                    try:
+                        new_task_id = create_task(
+                            connection,
+                            user_id,
+                            category_id,
+                            title,
+                            description,
+                        )
+                        print(f"任务创建成功，ID: {new_task_id}")
+                    except pymysql.MySQLError as error:
+                        print(f"任务创建失败：{error}")
                 else:
                     print("任务标题不能为空")
 
