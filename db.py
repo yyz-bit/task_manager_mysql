@@ -36,6 +36,23 @@ def list_tasks(connection):
         cursor.close()
 
 
+def get_task(connection, task_id):
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            "SELECT tasks.id, tasks.title, tasks.is_done, users.username, "
+            "categories.name AS category_name "
+            "FROM tasks "
+            "INNER JOIN users ON tasks.user_id = users.id "
+            "INNER JOIN categories ON tasks.category_id = categories.id "
+            "WHERE tasks.id = %s AND tasks.is_deleted = 0",
+            (task_id,),
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+
+
 def list_tasks_by_status(connection, status):
     cursor = connection.cursor()
     try:
