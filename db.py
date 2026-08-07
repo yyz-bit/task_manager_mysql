@@ -246,18 +246,19 @@ def complete_task(connection, task_id):
 
         if updated_rows == 0:
             connection.rollback()
-            print("任务不存在、已完成或已删除")
+            return False
         else:
             cursor.execute(
                 "INSERT INTO task_logs (task_id, action_type, details) VALUES (%s, %s, %s) ",
                 (task_id, "status_changed", "任务状态改为已完成")
             )
             connection.commit()
-            print("Task updated and log created")
+            return True
 
-    except pymysql.MySQLError as error:
+
+    except pymysql.MySQLError:
         connection.rollback()
-        print(f"Database error: {error}")
+        raise
 
     finally:
         cursor.close()
@@ -289,7 +290,15 @@ def main():
 
             elif choice == "2":
                 task_id = read_integer("Task ID: ")
-                complete_task(connection, task_id)
+                try:
+                    complete = complete_task(connection, task_id)
+
+                    if complete:
+                        print("任务已完成")
+                    else:
+                        print("任务不存在、已完成或已删除")
+                except pymysql.MySQLError as error:
+                    print(f"任务完成失败：{error}")
 
             elif choice == "3":
                 users = list_users(connection)
