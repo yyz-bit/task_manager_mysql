@@ -1,6 +1,6 @@
 # task_manager_mysql
 
-使用 Python 和 MySQL 构建的命令行任务管理器。项目通过 PyMySQL 访问数据库，并使用事务保证任务数据和操作日志同时成功或同时回滚。
+使用 Python、FastAPI 和 MySQL 构建的任务管理项目，同时提供命令行界面和 REST API。项目通过 PyMySQL 访问数据库，使用事务保证任务数据和操作日志同时提交或回滚，并使用 pytest 验证核心功能和 API 数据校验。
 
 ## 功能
 
@@ -16,22 +16,30 @@
 ## 技术栈
 
 - Python 3
+- FastAPI
+- Uvicorn
+- Pydantic
 - MySQL 8.4
 - PyMySQL
+- pytest
 - python-dotenv
 
 ## 项目结构
 
 ```text
 task_manager_mysql/
-|-- db.py                  # 菜单、输入输出和任务业务逻辑
-|-- database.py            # 数据库配置与连接创建
-|-- requirements.txt       # Python 依赖
-|-- .env.example           # 环境变量示例，不包含真实密码
+|-- api.py                  # FastAPI 应用和接口
+|-- db.py                   # 数据访问、业务逻辑和命令行程序
+|-- database.py             # 数据库配置与连接创建
+|-- requirements.txt        # Python 依赖
+|-- .env.example            # 环境变量示例，不包含真实密码
 |-- sql/
-|   |-- schema.sql         # 创建数据库和数据表
-|   |-- seed.sql           # 写入初始用户、分类、任务和日志
+|   |-- schema.sql          # 创建数据库和数据表
+|   |-- seed.sql            # 写入初始数据
 |   `-- transaction_demo.sql
+|-- tests/
+|   |-- test_api.py         # FastAPI 接口测试
+|   `-- test_db.py          # 命令行输出和输入测试
 `-- README.md
 ```
 
@@ -100,13 +108,43 @@ DB_NAME=task_manager_mysql
 
 `.env` 已被 Git 忽略，不要把真实数据库密码写入 `.env.example` 或提交到仓库。
 
-### 6. 启动程序
+### 6. 启动命令行程序
 
 ```powershell
 python .\db.py
 ```
 
 程序启动后，可通过编号菜单查看、创建、修改、完成、搜索和删除任务，也可以查看每个任务的操作日志。
+
+### 7. 启动 FastAPI 服务
+
+```powershell
+python -m uvicorn api:app --reload
+```
+
+服务启动后，可访问：
+
+- Swagger 接口文档：http://127.0.0.1:8000/docs
+- OpenAPI 描述文件：http://127.0.0.1:8000/openapi.json
+
+### 8. 运行自动化测试
+
+```powershell
+python -m pytest -v
+```
+
+测试使用 pytest 和 FastAPI TestClient，不需要提前启动 Uvicorn。
+
+## API 接口
+
+| 方法 | 路径 | 功能 |
+|---|---|---|
+| GET | `/tasks` | 查询任务列表 |
+| GET | `/tasks/{task_id}` | 按 ID 查询任务 |
+| POST | `/tasks` | 创建任务 |
+| PUT | `/tasks/{task_id}` | 修改任务标题和描述 |
+| PATCH | `/tasks/{task_id}/complete` | 将任务标记为已完成 |
+| DELETE | `/tasks/{task_id}` | 软删除任务 |
 
 ## 数据一致性
 
