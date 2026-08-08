@@ -177,8 +177,7 @@ def update_task(connection, task_id, title, description):
         task = cursor.fetchone()
         if task is None:
             connection.rollback()
-            print("任务不存在")
-            return
+            return "not_found"
         cursor.execute(
             "UPDATE tasks SET title = %s, description = %s WHERE id = %s AND is_deleted = 0",
             (title, description, task_id),
@@ -186,18 +185,17 @@ def update_task(connection, task_id, title, description):
         update_rows = cursor.rowcount
         if update_rows == 0:
             connection.rollback()
-            print("任务内容没有变化")
-            return
+            return "unchanged"
         cursor.execute(
             "INSERT INTO task_logs (task_id, action_type, details) "
             "VALUES (%s, %s, %s)",
             (task_id, "updated", "修改任务信息"),
         )
         connection.commit()
-        print("任务更新成功")
-    except pymysql.MySQLError as error:
+        return "updated"
+    except pymysql.MySQLError:
         connection.rollback()
-        print(f"任务更新失败：{error}")
+        raise
 
     finally:
         cursor.close()
@@ -363,7 +361,16 @@ def main():
                 title = input("New Title: ").strip()
                 if title:
                     description = input("任务描述（可留空）: ").strip() or None
-                    update_task(connection, task_id, title, description)
+                    try:
+                        result = update_task(connection, task_id, title, description)
+                        if result == "updated":
+                            print("任务更新成功")
+                        elif result == "unchanged":
+                            print("任务内容没有变化")
+                        elif result == "not_found":
+                            print("任务不存在")
+                    except pymysql.MySQLError as error:
+                        print(f"任务更新失败：{error}")
                 else:
                     print("任务新标题不能为空")
 
